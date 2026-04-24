@@ -8,9 +8,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sharif Pharma">
-    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/1e1b4b/ffffff?text=SP">
     
-    <link rel="manifest" id="pwa-manifest">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/pill.png">
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/192/pill.png">
+    
+    <link rel="manifest" href="manifest.json">
 
     <title>Sharif Pharma - Digital Admin</title>
 
@@ -50,13 +52,15 @@
 <body>
 
     <div class="max-w-md mx-auto pb-24">
-        
         <div id="home-section" class="app-page active">
             <div class="glass-header mb-8 text-center relative">
                 <button onclick="window.showPage('settings-section')" class="absolute top-6 right-6 bg-white/10 backdrop-blur-md p-3 rounded-2xl text-white">
                     <i class="fa-solid fa-sliders text-lg"></i>
                 </button>
-                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic mb-1">TUE LIST</h1>
+                <div class="flex justify-center mb-2">
+                    <img src="https://img.icons8.com/fluency/96/pill.png" alt="Logo" class="w-16 h-16">
+                </div>
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic mb-1">SHARIF PHARMA</h1>
                 <p class="text-indigo-200 text-[10px] font-bold tracking-[0.3em] uppercase opacity-80">Inventory & Order Manager</p>
             </div>
 
@@ -152,7 +156,7 @@
 
         <div id="detail-section" class="app-page px-6 pt-8">
             <div class="flex justify-between items-center mb-6">
-                <button onclick="window.showPage('history-section')" class="bg-white p-3 rounded-2xl shadow-sm border text-indigo-600"><i class="fa-solid fa-arrow-left"></i></button>
+                <button onclick="window.showPage('history-section')" class="bg-white p-3 rounded-2xl shadow-sm border text-indigo-900"><i class="fa-solid fa-arrow-left"></i></button>
                 <button id="downloadPdfBtn" class="bg-emerald-600 text-white px-6 py-4 rounded-2xl text-sm font-black uppercase shadow-lg"><i class="fa-solid fa-file-pdf mr-2"></i> PDF</button>
             </div>
             <div id="invoice-print" class="bg-white p-6 rounded-[2.5rem] border shadow-xl mb-6">
@@ -174,7 +178,6 @@
                 <button id="addItemToExistingBtn" class="save-btn bg-orange-500 font-black text-xs">আইটেম আপডেট করুন</button>
             </div>
         </div>
-
     </div>
 
     <datalist id="med-list-data"></datalist>
@@ -183,7 +186,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAzwqWUuMyW8piPhkFRhcpnmcpbu_0-lvk",
             authDomain: "sharif-pharma.firebaseapp.com",
@@ -197,42 +199,18 @@
         const db = getFirestore(app);
         const DOC_REF = doc(db, "settings", "app_data");
 
-        let masterData = { groups: [], customers: [], medicines: [] }, cart = [], currentGroup = '', currentChemist = '', currentOrderId = '', currentOrderData = null;
-
-        // PWA Manifest Generation
-        const manifest = {
-            "name": "Sharif Pharma Admin",
-            "short_name": "SharifPharma",
-            "start_url": ".",
-            "display": "standalone",
-            "background_color": "#f0f2f5",
-            "theme_color": "#1e1b4b",
-            "icons": [
-                { "src": "https://via.placeholder.com/192/1e1b4b/ffffff?text=SP", "sizes": "192x192", "type": "image/png" },
-                { "src": "https://via.placeholder.com/512/1e1b4b/ffffff?text=SP", "sizes": "512x512", "type": "image/png" }
-            ]
-        };
-        const stringManifest = JSON.stringify(manifest);
-        const blob = new Blob([stringManifest], {type: 'application/json'});
-        document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
-
-        // Service Worker Registration for Offline Support
+        // Service Worker Registration (ঠিক করা হয়েছে)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swCode = `
-                    self.addEventListener('install', e => {
-                        e.waitUntil(caches.open('pwa-cache').then(cache => cache.addAll(['./'])));
-                    });
-                    self.addEventListener('fetch', e => {
-                        e.respondWith(caches.match(e.request).then(response => response || fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], {type: 'text/javascript'});
-                navigator.serviceWorker.register(URL.createObjectURL(blob));
+                navigator.serviceWorker.register('./sw.js', { scope: './' })
+                .then(reg => console.log('SW Registered', reg))
+                .catch(err => console.log('SW Failed', err));
             });
         }
 
-        // --- Rest of your logic ---
+        let masterData = { groups: [], customers: [], medicines: [] }, cart = [], currentGroup = '', currentChemist = '', currentOrderId = '', currentOrderData = null;
+
+        // বাকি জাভাস্ক্রিপ্ট লজিকগুলো অপরিবর্তিত...
         window.showPage = (id) => { 
             document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active')); 
             document.getElementById(id).classList.add('active'); 
@@ -269,7 +247,7 @@
         window.showChemists = (g) => {
             currentGroup = g; document.getElementById('group-title').innerText = g; window.showPage('chemist-section');
             const filtered = (masterData.customers || []).filter(c => c.group === g);
-            const render = (list) => { document.getElementById('chemist-list').innerHTML = list.map(c => `<button onclick="window.openForm('${c.name}')" class="w-full text-left p-6 bg-white border border-slate-100 rounded-[2rem] font-black text-slate-700 shadow-sm uppercase active:scale-95 transition-all">${c.name}</button>`).join(''); };
+            const render = (list) => { document.getElementById('chemist-list').innerHTML = list.map(c => `<button onclick="window.openForm('${c.name}')" class="w-full text-left p-6 bg-white border border-slate-100 rounded-[2rem] font-black text-slate-700 shadow-sm uppercase italic active:scale-95 transition-all">${c.name}</button>`).join(''); };
             render(filtered);
             document.getElementById('custSearch').oninput = (e) => { render(filtered.filter(c => c.name.includes(e.target.value.toUpperCase()))); };
         };
