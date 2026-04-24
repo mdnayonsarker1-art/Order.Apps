@@ -229,7 +229,6 @@
 
         window.openForm = (name) => { currentChemist = name; cart = []; renderCart(); document.getElementById('selected-chemist-name').innerText = name; window.showPage('form-section'); };
         
-        // --- অ্যাড করার পর অটোমেটিক ফোকাস পরিবর্তন ফিক্স ---
         document.getElementById('addToCartBtn').onclick = () => {
             const pInput = document.getElementById('product-name');
             const qInput = document.getElementById('quantity');
@@ -241,7 +240,6 @@
                 pInput.value = ''; 
                 qInput.value = ''; 
                 renderCart(); 
-                // অ্যাড করার সাথে সাথে আবার মেডিসিন ইনপুটে কার্সর চলে যাবে
                 pInput.focus();
             }
         };
@@ -249,11 +247,13 @@
         function renderCart() { document.getElementById('cart-items').innerHTML = cart.map((item, i) => `<tr class="flex justify-between items-center p-5"><td class="font-bold text-lg uppercase">${item.product}</td><td class="font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-lg">x${item.qty}</td><td><button onclick="window.removeCartItem(${i})" class="text-red-400 p-2">✕</button></td></tr>`).join(''); }
         window.removeCartItem = (i) => { cart.splice(i,1); renderCart(); };
 
+        // --- সেভ করার পর কেমিস্ট লিস্টে (ব্যাক পেজ) নিয়ে যাওয়ার আপডেট ---
         document.getElementById('saveOrderBtn').onclick = async () => {
             if(!cart.length) return;
             const date = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Dhaka'}).format(new Date());
             await addDoc(collection(db, "orders"), { group: currentGroup, chemist: currentChemist, items: cart, date: date, timestamp: new Date().getTime() });
-            alert("অর্ডার সেভ হয়েছে!"); window.showPage('home-section');
+            alert("অর্ডার সেভ হয়েছে!"); 
+            window.showPage('chemist-section'); // এখানে 'home-section' পরিবর্তন করে 'chemist-section' করা হয়েছে
         };
 
         document.getElementById('searchHistoryBtn').onclick = async () => {
@@ -318,7 +318,7 @@
             if(p && q) {
                 await updateDoc(doc(db, "orders", currentOrderId), { items: [...(currentOrderData.items || []), { product: p, qty: q }] });
                 pInput.value = ''; qInput.value = '';
-                pInput.focus(); // এখানেও অটো ফোকাস অ্যাড করা হলো
+                pInput.focus();
             }
         };
 
@@ -365,4 +365,4 @@
 
     </script>
 </body>
-                </html>
+</html>
