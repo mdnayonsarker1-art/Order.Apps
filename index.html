@@ -30,7 +30,6 @@
         .order-table th { background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; padding: 12px; text-align: left; border-bottom: 2px solid #f1f5f9; }
         .order-table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
         
-        /* ফিক্স করা সেকশন: হাইট এবং স্ক্রলবার */
         .hidden-section { display: none; }
         .scrollable-list { max-height: 250px; overflow-y: auto; padding-right: 5px; }
         .scrollable-list::-webkit-scrollbar { width: 4px; }
@@ -48,7 +47,7 @@
                 <button onclick="window.showPage('settings-section')" class="absolute top-6 right-6 bg-white/10 backdrop-blur-md p-3 rounded-2xl text-white">
                     <i class="fa-solid fa-sliders text-lg"></i>
                 </button>
-                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic mb-1">SHARIF PHARMA</h1>
+                <h1 class="text-3xl font-black text-white tracking-tighter uppercase italic mb-1">TUE LIST</h1>
                 <p class="text-indigo-200 text-[10px] font-bold tracking-[0.3em] uppercase opacity-80">Inventory & Order Manager</p>
             </div>
 
@@ -230,9 +229,21 @@
 
         window.openForm = (name) => { currentChemist = name; cart = []; renderCart(); document.getElementById('selected-chemist-name').innerText = name; window.showPage('form-section'); };
         
+        // --- অ্যাড করার পর অটোমেটিক ফোকাস পরিবর্তন ফিক্স ---
         document.getElementById('addToCartBtn').onclick = () => {
-            const p = document.getElementById('product-name').value.toUpperCase(), q = document.getElementById('quantity').value;
-            if(p && q) { cart.push({product: p, qty: q}); document.getElementById('product-name').value = ''; document.getElementById('quantity').value = ''; renderCart(); }
+            const pInput = document.getElementById('product-name');
+            const qInput = document.getElementById('quantity');
+            const p = pInput.value.toUpperCase();
+            const q = qInput.value;
+            
+            if(p && q) { 
+                cart.push({product: p, qty: q}); 
+                pInput.value = ''; 
+                qInput.value = ''; 
+                renderCart(); 
+                // অ্যাড করার সাথে সাথে আবার মেডিসিন ইনপুটে কার্সর চলে যাবে
+                pInput.focus();
+            }
         };
 
         function renderCart() { document.getElementById('cart-items').innerHTML = cart.map((item, i) => `<tr class="flex justify-between items-center p-5"><td class="font-bold text-lg uppercase">${item.product}</td><td class="font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-lg">x${item.qty}</td><td><button onclick="window.removeCartItem(${i})" class="text-red-400 p-2">✕</button></td></tr>`).join(''); }
@@ -245,7 +256,6 @@
             alert("অর্ডার সেভ হয়েছে!"); window.showPage('home-section');
         };
 
-        // --- HISTORY SEARCH FIX ---
         document.getElementById('searchHistoryBtn').onclick = async () => {
             const dateInput = document.getElementById('searchDateInput').value;
             const groupFilter = document.getElementById('searchGroupFilter').value;
@@ -301,10 +311,14 @@
         };
 
         document.getElementById('addItemToExistingBtn').onclick = async () => {
-            const p = document.getElementById('edit-p-name').value.toUpperCase(), q = document.getElementById('edit-p-qty').value;
+            const pInput = document.getElementById('edit-p-name');
+            const qInput = document.getElementById('edit-p-qty');
+            const p = pInput.value.toUpperCase();
+            const q = qInput.value;
             if(p && q) {
                 await updateDoc(doc(db, "orders", currentOrderId), { items: [...(currentOrderData.items || []), { product: p, qty: q }] });
-                document.getElementById('edit-p-name').value = ''; document.getElementById('edit-p-qty').value = '';
+                pInput.value = ''; qInput.value = '';
+                pInput.focus(); // এখানেও অটো ফোকাস অ্যাড করা হলো
             }
         };
 
@@ -316,7 +330,6 @@
             html2pdf().set({ margin: 10, filename: `${currentOrderData.chemist}.pdf`, html2canvas: { scale: 3 }, jsPDF: { format: 'a4' } }).from(el).save().then(() => noPdf.forEach(x => x.style.display = 'table-cell'));
         };
 
-        // --- SETTINGS FIX (STEP 1 & 3) ---
         document.getElementById('addGroupBtn').onclick = async () => {
             const v = document.getElementById('gInput').value.trim().toUpperCase();
             if(v) {
@@ -352,4 +365,4 @@
 
     </script>
 </body>
-</html>
+                </html>
