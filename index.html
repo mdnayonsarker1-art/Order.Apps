@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="theme-color" content="#1e1b4b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sharif Pharma">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/192/1e1b4b/ffffff?text=SP">
+    
+    <link rel="manifest" id="pwa-manifest">
+
     <title>Sharif Pharma - Digital Admin</title>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -71,7 +80,6 @@
                 <button onclick="window.showPage('home-section')" class="bg-white p-3 rounded-2xl shadow-sm border text-indigo-900"><i class="fa-solid fa-arrow-left"></i></button>
                 <h1 class="text-2xl font-black text-slate-800 uppercase italic">Settings</h1>
             </div>
-
             <div class="setup-card">
                 <div class="card-accent bg-indigo-600"></div>
                 <h3 class="text-[10px] font-black text-indigo-600 uppercase mb-4 tracking-widest">STEP 1: GROUPS</h3>
@@ -175,6 +183,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, arrayRemove, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyAzwqWUuMyW8piPhkFRhcpnmcpbu_0-lvk",
             authDomain: "sharif-pharma.firebaseapp.com",
@@ -190,7 +199,45 @@
 
         let masterData = { groups: [], customers: [], medicines: [] }, cart = [], currentGroup = '', currentChemist = '', currentOrderId = '', currentOrderData = null;
 
-        window.showPage = (id) => { document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active')); document.getElementById(id).classList.add('active'); window.scrollTo(0,0); };
+        // PWA Manifest Generation
+        const manifest = {
+            "name": "Sharif Pharma Admin",
+            "short_name": "SharifPharma",
+            "start_url": ".",
+            "display": "standalone",
+            "background_color": "#f0f2f5",
+            "theme_color": "#1e1b4b",
+            "icons": [
+                { "src": "https://via.placeholder.com/192/1e1b4b/ffffff?text=SP", "sizes": "192x192", "type": "image/png" },
+                { "src": "https://via.placeholder.com/512/1e1b4b/ffffff?text=SP", "sizes": "512x512", "type": "image/png" }
+            ]
+        };
+        const stringManifest = JSON.stringify(manifest);
+        const blob = new Blob([stringManifest], {type: 'application/json'});
+        document.getElementById('pwa-manifest').setAttribute('href', URL.createObjectURL(blob));
+
+        // Service Worker Registration for Offline Support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                const swCode = `
+                    self.addEventListener('install', e => {
+                        e.waitUntil(caches.open('pwa-cache').then(cache => cache.addAll(['./'])));
+                    });
+                    self.addEventListener('fetch', e => {
+                        e.respondWith(caches.match(e.request).then(response => response || fetch(e.request)));
+                    });
+                `;
+                const blob = new Blob([swCode], {type: 'text/javascript'});
+                navigator.serviceWorker.register(URL.createObjectURL(blob));
+            });
+        }
+
+        // --- Rest of your logic ---
+        window.showPage = (id) => { 
+            document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active')); 
+            document.getElementById(id).classList.add('active'); 
+            window.scrollTo(0,0); 
+        };
         window.toggleSection = (id) => document.getElementById(id).classList.toggle('hidden-section');
 
         onSnapshot(DOC_REF, (snap) => {
@@ -234,55 +281,43 @@
             const qInput = document.getElementById('quantity');
             const p = pInput.value.toUpperCase();
             const q = qInput.value;
-            
             if(p && q) { 
                 cart.push({product: p, qty: q}); 
-                pInput.value = ''; 
-                qInput.value = ''; 
-                renderCart(); 
-                pInput.focus();
+                pInput.value = ''; qInput.value = ''; 
+                renderCart(); pInput.focus();
             }
         };
 
         function renderCart() { document.getElementById('cart-items').innerHTML = cart.map((item, i) => `<tr class="flex justify-between items-center p-5"><td class="font-bold text-lg uppercase">${item.product}</td><td class="font-black text-indigo-600 bg-indigo-50 px-4 py-2 rounded-xl text-lg">x${item.qty}</td><td><button onclick="window.removeCartItem(${i})" class="text-red-400 p-2">✕</button></td></tr>`).join(''); }
         window.removeCartItem = (i) => { cart.splice(i,1); renderCart(); };
 
-        // --- সেভ করার পর কেমিস্ট লিস্টে (ব্যাক পেজ) নিয়ে যাওয়ার আপডেট ---
         document.getElementById('saveOrderBtn').onclick = async () => {
             if(!cart.length) return;
             const date = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Dhaka'}).format(new Date());
             await addDoc(collection(db, "orders"), { group: currentGroup, chemist: currentChemist, items: cart, date: date, timestamp: new Date().getTime() });
             alert("অর্ডার সেভ হয়েছে!"); 
-            window.showPage('chemist-section'); // এখানে 'home-section' পরিবর্তন করে 'chemist-section' করা হয়েছে
+            window.showPage('chemist-section');
         };
 
         document.getElementById('searchHistoryBtn').onclick = async () => {
             const dateInput = document.getElementById('searchDateInput').value;
             const groupFilter = document.getElementById('searchGroupFilter').value;
             if(!dateInput) return alert("তারিখ সিলেক্ট করুন");
-
             const container = document.getElementById('history-data');
             container.innerHTML = '<p class="text-center text-slate-400 py-10 font-bold">সার্চ হচ্ছে...</p>';
-
             try {
                 const q = query(collection(db, "orders"), where("date", "==", dateInput));
                 const snap = await getDocs(q);
-                
                 let results = [];
                 snap.forEach(d => {
                     const data = d.data();
-                    if(groupFilter === "ALL" || data.group === groupFilter) {
-                        results.push({ id: d.id, ...data });
-                    }
+                    if(groupFilter === "ALL" || data.group === groupFilter) results.push({ id: d.id, ...data });
                 });
-
                 results.sort((a, b) => b.timestamp - a.timestamp);
-
                 if(results.length === 0) {
                     container.innerHTML = '<p class="text-center text-red-400 py-10 font-bold italic">কোনো অর্ডার পাওয়া যায়নি!</p>';
                     return;
                 }
-
                 container.innerHTML = results.map(data => `
                     <div onclick="window.openDetail('${data.id}')" class="setup-card flex justify-between items-center cursor-pointer !p-6 border-l-8 border-indigo-600 active:scale-95 transition-all">
                         <div>
@@ -292,10 +327,7 @@
                         <i class="fa-solid fa-chevron-right text-slate-300"></i>
                     </div>
                 `).join('');
-            } catch (err) {
-                console.error(err);
-                container.innerHTML = '<p class="text-center text-red-500 py-10">সার্চে ভুল হয়েছে। আবার চেষ্টা করুন।</p>';
-            }
+            } catch (err) { container.innerHTML = '<p class="text-center text-red-500 py-10">সার্চে ভুল হয়েছে।</p>'; }
         };
 
         window.openDetail = (id) => {
@@ -317,8 +349,7 @@
             const q = qInput.value;
             if(p && q) {
                 await updateDoc(doc(db, "orders", currentOrderId), { items: [...(currentOrderData.items || []), { product: p, qty: q }] });
-                pInput.value = ''; qInput.value = '';
-                pInput.focus();
+                pInput.value = ''; qInput.value = ''; pInput.focus();
             }
         };
 
@@ -333,10 +364,7 @@
         document.getElementById('addGroupBtn').onclick = async () => {
             const v = document.getElementById('gInput').value.trim().toUpperCase();
             if(v) {
-                const currentGroups = masterData.groups || [];
-                if(!currentGroups.includes(v)) {
-                    await updateDoc(DOC_REF, { groups: arrayUnion(v) });
-                }
+                if(!(masterData.groups || []).includes(v)) await updateDoc(DOC_REF, { groups: arrayUnion(v) });
                 document.getElementById('gInput').value = '';
             }
         };
@@ -345,8 +373,7 @@
             const meds = document.getElementById('mInputBulk').value.split(/[,\n]/).map(m => m.trim().toUpperCase()).filter(m => m);
             if(meds.length) {
                 await updateDoc(DOC_REF, { medicines: arrayUnion(...meds) });
-                document.getElementById('mInputBulk').value = '';
-                alert("ওষুধ সেভ হয়েছে!");
+                document.getElementById('mInputBulk').value = ''; alert("ওষুধ সেভ হয়েছে!");
             }
         };
 
