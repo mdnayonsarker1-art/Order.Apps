@@ -24,6 +24,9 @@
         .hidden-section { display: none; }
         .scrollable-list { max-height: 250px; overflow-y: auto; }
         .toggle-btn { display: inline-flex; align-items: center; gap: 4px; color: #94a3b8; font-size: 10px; font-weight: 900; margin-top: 10px; text-transform: uppercase; cursor: pointer; }
+        .order-table { width: 100%; border-collapse: collapse; }
+        .order-table th { background: #f8fafc; color: #64748b; font-size: 11px; text-transform: uppercase; padding: 12px; text-align: left; }
+        .order-table td { padding: 12px; font-size: 14px; border-bottom: 1px solid #f1f5f9; font-weight: 600; }
     </style>
 </head>
 <body>
@@ -33,7 +36,7 @@
             <div class="glass-header mb-8 text-center relative">
                 <button onclick="window.showPage('settings-section')" class="absolute top-6 right-6 bg-white/10 backdrop-blur-md p-3 rounded-2xl text-white"><i class="fa-solid fa-sliders"></i></button>
                 <h1 class="text-3xl font-black text-white uppercase italic mb-1">SHARIF PHARMA</h1>
-                <p class="text-indigo-200 text-[10px] font-bold tracking-widest uppercase opacity-80">Order Manager</p>
+                <p class="text-indigo-200 text-[10px] font-bold tracking-widest uppercase opacity-80">Inventory Manager</p>
             </div>
             <div class="px-6">
                 <div id="main-group-list" class="grid grid-cols-2 gap-4 mb-8"></div>
@@ -54,7 +57,7 @@
             </div>
             <div class="setup-card">
                 <div class="card-accent bg-indigo-600"></div>
-                <h3 class="text-[10px] font-black text-indigo-600 uppercase mb-4 tracking-widest">STEP 1: GROUPS</h3>
+                <h3 class="text-[10px] font-black text-indigo-600 uppercase mb-4 tracking-widest">GROUPS</h3>
                 <div class="flex gap-2">
                     <input type="text" id="gInput" placeholder="Ex: GB-1" class="!mb-0 !p-3 rounded-xl border-2 flex-1">
                     <button id="addGroupBtn" class="bg-indigo-950 text-white px-5 rounded-xl font-black text-xs">ADD</button>
@@ -63,11 +66,11 @@
             </div>
             <div class="setup-card">
                 <div class="card-accent bg-emerald-500"></div>
-                <h3 class="text-[10px] font-black text-emerald-600 uppercase mb-4 tracking-widest">STEP 2: CUSTOMERS</h3>
+                <h3 class="text-[10px] font-black text-emerald-600 uppercase mb-4 tracking-widest">CUSTOMERS</h3>
                 <select id="cGroupSelect" class="large-input !text-sm"><option value="">Select Group First</option></select>
                 <textarea id="cInputBulk" rows="2" placeholder="কাস্টমারের নাম..." class="large-input !text-sm"></textarea>
-                <button id="saveCustBtn" class="save-btn bg-emerald-600">SAVE CUSTOMERS</button>
-                <div onclick="window.toggleSection('cViewWrap')" class="toggle-btn mt-4">SHOW & DELETE CHEMIST <i class="fa-solid fa-chevron-down"></i></div>
+                <button id="saveCustBtn" class="save-btn bg-emerald-600">SAVE</button>
+                <div onclick="window.toggleSection('cViewWrap')" class="toggle-btn mt-4">SHOW & DELETE <i class="fa-solid fa-chevron-down"></i></div>
                 <div id="cViewWrap" class="hidden-section mt-4">
                     <div id="cSettingsGroupButtons" class="flex flex-wrap gap-2 mb-4"></div>
                     <div id="cSettingsListUI" class="space-y-2 border-t pt-4 scrollable-list"></div>
@@ -75,9 +78,9 @@
             </div>
             <div class="setup-card">
                 <div class="card-accent bg-orange-500"></div>
-                <h3 class="text-[10px] font-black text-orange-600 uppercase mb-4 tracking-widest">STEP 3: MEDICINE</h3>
+                <h3 class="text-[10px] font-black text-orange-600 uppercase mb-4 tracking-widest">MEDICINE</h3>
                 <textarea id="mInputBulk" rows="2" placeholder="মেডিসিন লিস্ট..." class="large-input !text-sm"></textarea>
-                <button id="saveMedBtn" class="save-btn bg-orange-600">SAVE MEDICINE</button>
+                <button id="saveMedBtn" class="save-btn bg-orange-600">SAVE</button>
                 <div id="mListUI" class="flex flex-wrap gap-2 mt-4"></div>
             </div>
         </div>
@@ -85,7 +88,7 @@
         <div id="history-section" class="app-page px-6 pt-8">
             <div class="flex items-center gap-4 mb-6">
                 <button onclick="window.showPage('home-section')" class="bg-white p-3 rounded-2xl shadow-sm border text-indigo-600"><i class="fa-solid fa-chevron-left"></i></button>
-                <h1 class="text-2xl font-black text-slate-800 uppercase italic">Report History</h1>
+                <h1 class="text-2xl font-black text-slate-800 uppercase italic">History</h1>
             </div>
             <div class="setup-card !p-4 bg-indigo-50/50 border-none">
                 <div class="grid grid-cols-2 gap-2 mb-2">
@@ -109,16 +112,25 @@
                     <p id="inv-date" class="text-[9px] font-bold text-slate-400 uppercase mt-1"></p>
                 </div>
                 <p id="inv-chemist" class="text-xl font-black uppercase text-slate-800 italic mb-4"></p>
-                <table class="w-full text-left"><tbody id="inv-items-table-body"></tbody></table>
+                <table class="order-table">
+                    <thead><tr><th>Medicine</th><th class="text-center">Qty</th><th class="no-pdf text-center">X</th></tr></thead>
+                    <tbody id="inv-items-table-body"></tbody>
+                </table>
+            </div>
+            <div class="setup-card border-l-8 border-orange-500">
+                <h3 class="text-[10px] font-black text-orange-600 uppercase mb-4 tracking-widest">Update Order Items</h3>
+                <input type="text" id="edit-p-name" list="med-list-data" placeholder="মেডিসিনের নাম..." class="large-input !text-sm">
+                <input type="number" id="edit-p-qty" placeholder="পরিমাণ" class="large-input !text-sm">
+                <button id="addItemToExistingBtn" class="save-btn bg-orange-500 font-black text-xs uppercase">আইটেম আপডেট করুন</button>
             </div>
         </div>
 
         <div id="chemist-section" class="app-page px-6 pt-8">
             <div class="flex items-center gap-4 mb-6">
                 <button onclick="window.showPage('home-section')" class="bg-white p-3 rounded-2xl shadow-sm border text-indigo-900"><i class="fa-solid fa-chevron-left"></i></button>
-                <h1 id="group-title" class="text-xl font-black text-slate-800 uppercase italic">Chemist List</h1>
+                <h1 id="group-title" class="text-xl font-black text-slate-800 uppercase italic">Chemist</h1>
             </div>
-            <input type="text" id="custSearch" placeholder="সার্চ করুন..." class="large-input !text-sm">
+            <input type="text" id="custSearch" placeholder="সার্চ করুন..." class="large-input !text-sm shadow-sm">
             <div id="chemist-list" class="space-y-3"></div>
         </div>
 
@@ -127,7 +139,7 @@
             <div class="setup-card border-t-8 border-indigo-600">
                 <h2 id="selected-chemist-name" class="text-2xl font-black text-slate-800 uppercase italic mb-6 text-center"></h2>
                 <input type="text" id="product-name" list="med-list-data" placeholder="মেডিসিনের নাম..." class="large-input">
-                <input type="number" id="quantity" placeholder="পরিমাণ (Qty)" class="large-input">
+                <input type="number" id="quantity" placeholder="পরিমাণ" class="large-input">
                 <button id="addToCartBtn" class="save-btn bg-indigo-600">অ্যাড করুন</button>
             </div>
             <div class="setup-card p-0 overflow-hidden"><table class="w-full"><tbody id="cart-items" class="divide-y divide-slate-100"></tbody></table></div>
@@ -154,11 +166,12 @@
         const db = getFirestore(app);
         const DOC_REF = doc(db, "settings", "app_data");
 
-        let masterData = { groups: [], customers: [], medicines: [] }, cart = [], currentGroup = '', currentChemist = '', currentOrderId = '';
+        let masterData = { groups: [], customers: [], medicines: [] }, cart = [], currentGroup = '', currentChemist = '', currentOrderId = '', currentOrderData = null;
 
         window.showPage = (id) => { 
             document.querySelectorAll('.app-page').forEach(p => p.classList.remove('active')); 
             document.getElementById(id).classList.add('active'); 
+            window.scrollTo(0,0);
         };
         window.toggleSection = (id) => document.getElementById(id).classList.toggle('hidden-section');
 
@@ -174,7 +187,6 @@
                     <div class="font-black text-slate-700 text-[11px] uppercase">${g}</div>
                 </button>
             `).join('');
-
             document.getElementById('gList').innerHTML = (masterData.groups || []).map(g => `<span class="bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-black uppercase">${g} <i onclick="window.removeItem('groups', '${g}')" class="fa-solid fa-xmark ml-1 cursor-pointer"></i></span>`).join('');
             document.getElementById('cGroupSelect').innerHTML = '<option value="">Select Group</option>' + (masterData.groups || []).map(g => `<option value="${g}">${g}</option>`).join('');
             document.getElementById('searchGroupFilter').innerHTML = '<option value="ALL">All Groups</option>' + (masterData.groups || []).map(g => `<option value="${g}">${g}</option>`).join('');
@@ -183,70 +195,69 @@
             document.getElementById('med-list-data').innerHTML = (masterData.medicines || []).map(m => `<option value="${m}">`).join('');
         }
 
-        // কাস্টমার/কেমিস্ট ভিউ এবং ডিলিট (Settings থেকে)
         window.viewCustomersByGroup = (g) => {
             const filtered = (masterData.customers || []).filter(c => c.group === g);
-            document.getElementById('cSettingsListUI').innerHTML = filtered.length ? filtered.map(c => `
-                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] font-bold uppercase">
-                    <span>${c.name}</span>
-                    <i onclick="window.removeCustFromMaster('${c.name}', '${c.group}')" class="fa-solid fa-trash text-red-400 cursor-pointer p-1"></i>
-                </div>
-            `).join('') : '<p class="text-center text-[10px] py-4 text-slate-400">Empty!</p>';
+            document.getElementById('cSettingsListUI').innerHTML = filtered.map(c => `<div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border mb-1"><span>${c.name}</span><i onclick="window.removeCustMaster('${c.name}', '${c.group}')" class="fa-solid fa-trash text-red-400 p-1 cursor-pointer"></i></div>`).join('');
         };
 
-        window.removeCustFromMaster = async (n, g) => { 
-            if(confirm(`Delete ${n}?`)) {
-                const updated = (masterData.customers || []).filter(c => !(c.name === n && c.group === g));
-                await updateDoc(DOC_REF, { customers: updated });
-                window.viewCustomersByGroup(g);
-            }
-        };
+        window.removeCustMaster = async (n, g) => { if(confirm("Delete?")) await updateDoc(DOC_REF, { customers: (masterData.customers || []).filter(c => !(c.name === n && c.group === g)) }); };
 
-        // সার্চ এবং রিপোর্ট ডিলিট (Report History থেকে)
+        // History Search
         document.getElementById('searchHistoryBtn').onclick = async () => {
-            const from = document.getElementById('fromDate').value;
-            const to = document.getElementById('toDate').value;
-            const grp = document.getElementById('searchGroupFilter').value;
-            if(!from || !to) return alert("Select Date Range");
-            
-            const container = document.getElementById('history-data');
-            container.innerHTML = '<p class="text-center py-10 font-bold">Searching...</p>';
-            
+            const from = document.getElementById('fromDate').value, to = document.getElementById('toDate').value, grp = document.getElementById('searchGroupFilter').value;
+            if(!from || !to) return alert("Select Date");
+            const container = document.getElementById('history-data'); container.innerHTML = '<p class="text-center font-bold py-10">Searching...</p>';
             const q = query(collection(db, "orders"), where("date", ">=", from), where("date", "<=", to));
             const snap = await getDocs(q);
-            let results = [];
-            snap.forEach(d => {
-                const data = d.data();
-                if(grp === "ALL" || data.group === grp) results.push({ id: d.id, ...data });
-            });
+            let results = []; snap.forEach(d => { if(grp === "ALL" || d.data().group === grp) results.push({id: d.id, ...d.data()}); });
             results.sort((a,b) => b.timestamp - a.timestamp);
-
-            if(!results.length) {
-                container.innerHTML = '<p class="text-center text-red-400 py-10">No Reports Found</p>';
-                return;
-            }
-
-            container.innerHTML = results.map(data => `
+            container.innerHTML = results.map(d => `
                 <div class="setup-card flex justify-between items-center !p-4 border-l-8 border-indigo-600">
-                    <div onclick="window.openDetail('${data.id}')" class="flex-1">
-                        <p class="font-black text-slate-800 uppercase text-md italic">${data.chemist}</p>
-                        <p class="text-[9px] font-bold text-slate-400 uppercase">${data.group} • ${data.date}</p>
+                    <div onclick="window.openDetail('${d.id}')" class="flex-1">
+                        <p class="font-black text-slate-800 uppercase italic">${d.chemist}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase">${d.group} • ${d.date}</p>
                     </div>
-                    <button onclick="window.deleteReport('${data.id}')" class="p-3 text-red-400 hover:bg-red-50 rounded-xl transition-all">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </button>
-                </div>
-            `).join('');
+                    <button onclick="window.deleteReport('${d.id}')" class="p-3 text-red-400"><i class="fa-solid fa-trash-can"></i></button>
+                </div>`).join('');
         };
 
-        window.deleteReport = async (id) => {
-            if(confirm("এই রিপোর্টটি কি ডিলিট করতে চান?")) {
-                await deleteDoc(doc(db, "orders", id));
-                document.getElementById('searchHistoryBtn').click(); // লিস্ট রিফ্রেশ
+        window.deleteReport = async (id) => { if(confirm("Delete Report?")) { await deleteDoc(doc(db, "orders", id)); document.getElementById('searchHistoryBtn').click(); } };
+
+        // Detail View with REAL-TIME EDIT
+        window.openDetail = (id) => {
+            currentOrderId = id;
+            onSnapshot(doc(db, "orders", id), (snap) => {
+                if(!snap.exists()) return;
+                currentOrderData = snap.data();
+                document.getElementById('inv-date').innerText = currentOrderData.date;
+                document.getElementById('inv-chemist').innerText = currentOrderData.chemist;
+                document.getElementById('inv-items-table-body').innerHTML = (currentOrderData.items || []).map((it, i) => `
+                    <tr>
+                        <td class="uppercase text-[12px]">${it.product}</td>
+                        <td class="text-center font-black text-indigo-600">x${it.qty}</td>
+                        <td class="no-pdf text-center"><button onclick="window.deleteItemFromOrder(${i})" class="text-red-300"><i class="fa-solid fa-trash-can"></i></button></td>
+                    </tr>`).join('');
+                window.showPage('detail-section');
+            });
+        };
+
+        window.deleteItemFromOrder = async (i) => {
+            if(confirm("Delete this item?")) {
+                const newItems = currentOrderData.items.filter((_, idx) => idx !== i);
+                await updateDoc(doc(db, "orders", currentOrderId), { items: newItems });
             }
         };
 
-        // অর্ডার ফর্ম লজিক
+        document.getElementById('addItemToExistingBtn').onclick = async () => {
+            const p = document.getElementById('edit-p-name').value.toUpperCase();
+            const q = document.getElementById('edit-p-qty').value;
+            if(p && q) {
+                await updateDoc(doc(db, "orders", currentOrderId), { items: arrayUnion({ product: p, qty: q }) });
+                document.getElementById('edit-p-name').value = ''; document.getElementById('edit-p-qty').value = '';
+            }
+        };
+
+        // Order Form Logic
         window.showChemists = (g) => {
             currentGroup = g; document.getElementById('group-title').innerText = g; window.showPage('chemist-section');
             const filtered = (masterData.customers || []).filter(c => c.group === g);
@@ -256,15 +267,12 @@
         };
 
         window.openForm = (name) => { currentChemist = name; cart = []; renderCart(); document.getElementById('selected-chemist-name').innerText = name; window.showPage('form-section'); };
-        
         document.getElementById('addToCartBtn').onclick = () => {
-            const pInput = document.getElementById('product-name'), qInput = document.getElementById('quantity'), p = pInput.value.toUpperCase(), q = qInput.value;
-            if(p && q) { cart.push({product: p, qty: q}); pInput.value = ''; qInput.value = ''; renderCart(); pInput.focus(); }
+            const p = document.getElementById('product-name').value.toUpperCase(), q = document.getElementById('quantity').value;
+            if(p && q) { cart.push({product: p, qty: q}); document.getElementById('product-name').value = ''; document.getElementById('quantity').value = ''; renderCart(); document.getElementById('product-name').focus(); }
         };
-
         function renderCart() { document.getElementById('cart-items').innerHTML = cart.map((item, i) => `<tr class="flex justify-between items-center p-5"><td class="font-bold uppercase">${item.product}</td><td class="font-black text-indigo-600">x${item.qty}</td><td><button onclick="window.removeCartItem(${i})" class="text-red-400">✕</button></td></tr>`).join(''); }
         window.removeCartItem = (i) => { cart.splice(i,1); renderCart(); };
-
         document.getElementById('saveOrderBtn').onclick = async () => {
             if(!cart.length) return;
             const date = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Dhaka'}).format(new Date());
@@ -272,39 +280,20 @@
             alert("Saved!"); window.showPage('chemist-section');
         };
 
-        window.openDetail = (id) => {
-            onSnapshot(doc(db, "orders", id), (snap) => {
-                if(!snap.exists()) return;
-                const data = snap.data();
-                document.getElementById('inv-date').innerText = data.date;
-                document.getElementById('inv-chemist').innerText = data.chemist;
-                document.getElementById('inv-items-table-body').innerHTML = (data.items || []).map(it => `<tr><td class="p-3 border-b uppercase font-bold text-sm">${it.product}</td><td class="p-3 border-b text-right font-black text-indigo-600">x${it.qty}</td></tr>`).join('');
-                window.showPage('detail-section');
-            });
-        };
-
-        // PDF download
+        // PDF and Master Data functions
         document.getElementById('downloadPdfBtn').onclick = () => {
             const el = document.getElementById('invoice-print');
-            html2pdf().set({ margin: 10, filename: 'Report.pdf', html2canvas: { scale: 3 }, jsPDF: { format: 'a4' } }).from(el).save();
+            const noPdf = document.querySelectorAll('.no-pdf'); noPdf.forEach(x => x.style.display = 'none');
+            html2pdf().set({ margin: 10, filename: `${currentOrderData.chemist}.pdf`, html2canvas: { scale: 3 }, jsPDF: { format: 'a4' } }).from(el).save().then(() => noPdf.forEach(x => x.style.display = 'table-cell'));
         };
-
-        // Master Data Add Buttons
-        document.getElementById('addGroupBtn').onclick = async () => {
-            const v = document.getElementById('gInput').value.trim().toUpperCase();
-            if(v && !(masterData.groups || []).includes(v)) { await updateDoc(DOC_REF, { groups: arrayUnion(v) }); document.getElementById('gInput').value = ''; }
-        };
+        document.getElementById('addGroupBtn').onclick = async () => { const v = document.getElementById('gInput').value.trim().toUpperCase(); if(v) await updateDoc(DOC_REF, { groups: arrayUnion(v) }); document.getElementById('gInput').value = ''; };
         document.getElementById('saveMedBtn').onclick = async () => {
             const meds = document.getElementById('mInputBulk').value.split(/[,\n]/).map(m => m.trim().toUpperCase()).filter(m => m);
-            if(meds.length) { await updateDoc(DOC_REF, { medicines: arrayUnion(...meds) }); document.getElementById('mInputBulk').value = ''; alert("Saved!"); }
+            if(meds.length) { await updateDoc(DOC_REF, { medicines: arrayUnion(...meds) }); document.getElementById('mInputBulk').value = ''; }
         };
         document.getElementById('saveCustBtn').onclick = async () => {
             const grp = document.getElementById('cGroupSelect').value, txt = document.getElementById('cInputBulk').value.split(/[,\n]/).map(n => n.trim().toUpperCase()).filter(n => n);
-            if(grp && txt.length) {
-                const combined = [...(masterData.customers || []), ...txt.map(n => ({name: n, group: grp}))];
-                await updateDoc(DOC_REF, { customers: combined });
-                document.getElementById('cInputBulk').value = ''; alert("Saved!");
-            }
+            if(grp && txt.length) { await updateDoc(DOC_REF, { customers: arrayUnion(...txt.map(n => ({name: n, group: grp}))) }); document.getElementById('cInputBulk').value = ''; alert("Saved!"); }
         };
         window.removeItem = async (k, v) => { if(confirm("Delete?")) await updateDoc(DOC_REF, { [k]: arrayRemove(v) }); };
 
